@@ -95,7 +95,7 @@ class _TodoListState extends State<TodoList> {
                     itemBuilder: (context, index) {
                       final task = tasks[index];
                       return Slidable(
-                        startActionPane: ActionPane(
+                        endActionPane: ActionPane(
                           motion: const StretchMotion(),
                           children: [
                             SlidableAction(
@@ -143,14 +143,31 @@ class _TodoListState extends State<TodoList> {
                               task.save();
                             },
                           ),
-                          trailing: task.imagePath != null
-                              ? Image.file(
-                                  File(task.imagePath!),
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
+                          trailing: Hero(
+                            tag: task.imagePath ?? '',
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) {
+                                      return FullScreenImage(
+                                        imagePath: task.imagePath,
+                                      );
+                                    },
+                                  ),
+                                );
+                              },
+                              child: task.imagePath != null
+                                  ? Image.file(
+                                      File(task.imagePath!),
+                                      width: 50,
+                                      height: 50,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                          ),
                           onTap: () async {
                             final updatedTask = await showDialog<TodoItem>(
                               context: context,
@@ -203,12 +220,12 @@ class _TaskDialogState extends State<TaskDialog> {
   final TextEditingController _textEditingController = TextEditingController();
   File? _image;
 
-  late Box<TodoItem> _taskBox; // Correct variable name
+  late Box<TodoItem> _taskBox;
 
   @override
   void initState() {
     super.initState();
-    _taskBox = Hive.box<TodoItem>('tasks'); // Initialize _taskBox
+    _taskBox = Hive.box<TodoItem>('tasks');
     if (widget.initialTask != null) {
       _textEditingController.text = widget.initialTask!.title;
       _image = widget.initialTask!.imagePath != null
@@ -305,6 +322,27 @@ class _TaskDialogState extends State<TaskDialog> {
           child: const Text('Save'),
         ),
       ],
+    );
+  }
+}
+
+class FullScreenImage extends StatelessWidget {
+  final String? imagePath;
+
+  const FullScreenImage({Key? key, this.imagePath}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Hero(
+          tag: imagePath ?? '',
+          child: imagePath != null
+              ? Image.file(File(imagePath!))
+              : const Text('No image'),
+        ),
+      ),
     );
   }
 }
