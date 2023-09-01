@@ -20,9 +20,11 @@ class TodoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'To-Do List App',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const TodoList(),
+      darkTheme: ThemeData.dark(),
     );
   }
 }
@@ -80,114 +82,113 @@ class _TodoListState extends State<TodoList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('To-Do List')),
-      // Inside TodoList widget's build method
       body: ValueListenableBuilder(
         valueListenable: _taskBox.listenable(),
         builder: (context, Box<TodoItem> box, _) {
           final tasks = box.values.toList();
-          return Center(
-            child: tasks.isEmpty
-                ? const Text('No tasks')
-                : ListView.separated(
-                    itemCount: tasks.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final task = tasks[index];
-                      return Slidable(
-                        endActionPane: ActionPane(
-                          motion: const StretchMotion(),
-                          children: [
-                            SlidableAction(
-                              icon: Icons.edit,
-                              backgroundColor: Colors.green.shade200,
-                              onPressed: (context) async {
-                                final updatedTask = await showDialog<TodoItem>(
-                                  context: context,
-                                  builder: (context) =>
-                                      TaskDialog(initialTask: task),
-                                );
-                                if (updatedTask != null) {
-                                  setState(() {
-                                    task.title = updatedTask.title;
-                                    task.imagePath = updatedTask.imagePath;
-                                  });
-                                  task.save();
-                                }
-                              },
-                            ),
-                            SlidableAction(
-                              icon: Icons.delete,
-                              backgroundColor: Colors.red.shade200,
-                              onPressed: (context) {
-                                _taskBox.delete(task.key);
-                              },
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            task.title,
-                            style: TextStyle(
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                            ),
-                          ),
-                          leading: Checkbox(
-                            value: task.isCompleted,
-                            onChanged: (value) {
-                              setState(() {
-                                task.isCompleted = value!;
-                              });
-                              task.save();
+          return tasks.isEmpty
+              ? Center(child: const Text('No tasks'))
+              : ListView.builder(
+                  itemCount: tasks.length,
+                  itemBuilder: (context, index) {
+                    final task = tasks[index];
+                    return Slidable(
+                      endActionPane: ActionPane(
+                        motion: const StretchMotion(),
+                        children: [
+                          SlidableAction(
+                            icon: Icons.edit,
+                            backgroundColor: Colors.green.shade200,
+                            onPressed: (context) async {
+                              final updatedTask = await showDialog<TodoItem>(
+                                context: context,
+                                builder: (context) =>
+                                    TaskDialog(initialTask: task),
+                              );
+                              if (updatedTask != null) {
+                                setState(() {
+                                  task.title = updatedTask.title;
+                                  task.imagePath = updatedTask.imagePath;
+                                });
+                                task.save();
+                              }
                             },
                           ),
-                          trailing: Hero(
-                            tag: task.imagePath ?? '',
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) {
-                                      return FullScreenImage(
-                                        imagePath: task.imagePath,
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
-                              child: task.imagePath != null
-                                  ? Image.file(
-                                      File(task.imagePath!),
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
+                          SlidableAction(
+                            icon: Icons.delete,
+                            backgroundColor: Colors.red.shade200,
+                            onPressed: (context) {
+                              _taskBox.delete(task.key);
+                            },
                           ),
-                          onTap: () async {
-                            final updatedTask = await showDialog<TodoItem>(
-                              context: context,
-                              builder: (context) =>
-                                  TaskDialog(initialTask: task),
-                            );
-
-                            if (updatedTask != null) {
-                              setState(() {
-                                task.title = updatedTask.title;
-                                task.imagePath = updatedTask.imagePath;
-                              });
-                              task.save();
-                            }
+                        ],
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          task.title,
+                          style: TextStyle(
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        leading: Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (value) {
+                            setState(() {
+                              task.isCompleted = value!;
+                            });
+                            task.save();
                           },
                         ),
-                      );
-                    },
-                  ),
-          );
+                        trailing: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return FullScreenImage(
+                                    imagePath: task.imagePath,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          child: Hero(
+                            tag: task.imagePath ?? '',
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: task.imagePath != null
+                                    ? DecorationImage(
+                                        image: FileImage(File(task.imagePath!)),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onTap: () async {
+                          final updatedTask = await showDialog<TodoItem>(
+                            context: context,
+                            builder: (context) => TaskDialog(initialTask: task),
+                          );
+
+                          if (updatedTask != null) {
+                            setState(() {
+                              task.title = updatedTask.title;
+                              task.imagePath = updatedTask.imagePath;
+                            });
+                            task.save();
+                          }
+                        },
+                      ),
+                    );
+                  },
+                );
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -220,12 +221,9 @@ class _TaskDialogState extends State<TaskDialog> {
   final TextEditingController _textEditingController = TextEditingController();
   File? _image;
 
-  late Box<TodoItem> _taskBox;
-
   @override
   void initState() {
     super.initState();
-    _taskBox = Hive.box<TodoItem>('tasks');
     if (widget.initialTask != null) {
       _textEditingController.text = widget.initialTask!.title;
       _image = widget.initialTask!.imagePath != null
@@ -274,29 +272,31 @@ class _TaskDialogState extends State<TaskDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Add Task'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _textEditingController,
-            decoration: const InputDecoration(labelText: 'Task Name'),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: _getImageFromGallery,
-                child: const Icon(Icons.photo_library),
-              ),
-              ElevatedButton(
-                onPressed: _getImageFromCamera,
-                child: const Icon(Icons.camera_alt),
-              ),
-            ],
-          ),
-          if (_image != null) Image.file(_image!, width: 150, height: 200),
-        ],
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _textEditingController,
+              decoration: const InputDecoration(labelText: 'Task Name'),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: _getImageFromGallery,
+                  child: const Icon(Icons.photo_library),
+                ),
+                ElevatedButton(
+                  onPressed: _getImageFromCamera,
+                  child: const Icon(Icons.camera_alt),
+                ),
+              ],
+            ),
+            if (_image != null) Image.file(_image!, width: 150, height: 200),
+          ],
+        ),
       ),
       actions: [
         TextButton(
