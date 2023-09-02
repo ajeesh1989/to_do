@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+// ignore: depend_on_referenced_packages
 import 'package:path/path.dart';
+// ignore: depend_on_referenced_packages
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -75,12 +77,12 @@ class TodoList extends StatefulWidget {
   const TodoList({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _TodoListState createState() => _TodoListState();
 }
 
 class _TodoListState extends State<TodoList> {
   late Box<TodoItem> _taskBox;
-  bool _showCompletedTasks = false;
   String? _selectedTag; // Track selected tag
 
   @override
@@ -107,8 +109,8 @@ class _TodoListState extends State<TodoList> {
           false, // Disallow tapping outside the dialog to dismiss
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Reset App'),
-          content: SingleChildScrollView(
+          title: const Text('Reset App'),
+          content: const SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
                 Text('Are you sure you want to reset the app?'),
@@ -117,13 +119,19 @@ class _TodoListState extends State<TodoList> {
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Reset'),
+              child: const Text(
+                'Reset',
+                style: TextStyle(color: Colors.white),
+              ),
               onPressed: () {
                 // Clear the task box and reset any necessary state
                 _resetApp();
@@ -178,8 +186,8 @@ class _TodoListState extends State<TodoList> {
             // IconButton to reset the app
             IconButton(
               onPressed: () => _showResetConfirmationDialog(context),
-              icon:
-                  Icon(Icons.refresh), // You can use any reset icon you prefer
+              icon: const Icon(
+                  Icons.refresh), // You can use any reset icon you prefer
             ),
           ],
         ),
@@ -193,7 +201,7 @@ class _TodoListState extends State<TodoList> {
           onPressed: () async {
             final newTask = await showDialog<TodoItem>(
               context: context,
-              builder: (context) => TaskDialog(
+              builder: (context) => const TaskDialog(
                   tags: ['Personal', 'Business', 'Shopping', 'Work', 'Other']),
             );
 
@@ -219,7 +227,7 @@ class _TodoListState extends State<TodoList> {
                 .toList();
 
         return tasks.isEmpty
-            ? Center(child: const Text('No tasks'))
+            ? const Center(child: Text('No tasks'))
             : ListView.builder(
                 itemCount: tasks.length,
                 itemBuilder: (context, index) {
@@ -236,7 +244,7 @@ class _TodoListState extends State<TodoList> {
                               context: context,
                               builder: (context) => TaskDialog(
                                 initialTask: task,
-                                tags: [
+                                tags: const [
                                   'Personal',
                                   'Business',
                                   'Shopping',
@@ -317,7 +325,7 @@ class _TodoListState extends State<TodoList> {
                           context: context,
                           builder: (context) => TaskDialog(
                             initialTask: task,
-                            tags: [
+                            tags: const [
                               'Personal',
                               'Business',
                               'Shopping',
@@ -355,7 +363,7 @@ class _TodoListState extends State<TodoList> {
                 .toList();
 
         return completedTasks.isEmpty
-            ? Center(child: const Text('No completed tasks'))
+            ? const Center(child: Text('No completed tasks'))
             : ListView.builder(
                 itemCount: completedTasks.length,
                 itemBuilder: (context, index) {
@@ -372,7 +380,7 @@ class _TodoListState extends State<TodoList> {
                               context: context,
                               builder: (context) => TaskDialog(
                                 initialTask: task,
-                                tags: [
+                                tags: const [
                                   'Personal',
                                   'Business',
                                   'Shopping',
@@ -453,7 +461,7 @@ class _TodoListState extends State<TodoList> {
                           context: context,
                           builder: (context) => TaskDialog(
                             initialTask: task,
-                            tags: [
+                            tags: const [
                               'Personal',
                               'Business',
                               'Shopping',
@@ -489,6 +497,7 @@ class TaskDialog extends StatefulWidget {
       : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _TaskDialogState createState() => _TaskDialogState();
 }
 
@@ -496,6 +505,7 @@ class _TaskDialogState extends State<TaskDialog> {
   final TextEditingController _textEditingController = TextEditingController();
   File? _image;
   String? _selectedTag;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -550,109 +560,138 @@ class _TaskDialogState extends State<TaskDialog> {
     return AlertDialog(
       title: Text(widget.initialTask != null ? 'Edit Task' : 'Add Task'),
       content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.blue,
-                  width: 2.0,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.teal,
+                    width: 2.0,
+                  ),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _textEditingController,
-                    decoration: const InputDecoration(labelText: 'Task Name'),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: _getImageFromGallery,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.photo_library),
-                            const SizedBox(width: 8),
-                            const Text('Gallery'),
-                          ],
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _textEditingController,
+                      decoration: const InputDecoration(
+                        errorStyle: TextStyle(color: Colors.yellow),
+                        errorBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.yellow)),
+                        labelText: 'Task Name',
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
                         ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _getImageFromCamera,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.camera_alt),
-                            const SizedBox(width: 8),
-                            const Text('Camera'),
-                          ],
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white),
                         ),
+                        labelStyle: TextStyle(color: Colors.white),
                       ),
-                    ],
-                  ),
-                  if (_image != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Image.file(_image!, width: 150, height: 150),
+                      style: const TextStyle(color: Colors.white),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Task name cannot be empty';
+                        }
+                        return null;
+                      },
                     ),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'Tag',
-                      border: OutlineInputBorder(),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _getImageFromGallery,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.photo_library),
+                              SizedBox(width: 8),
+                              Text('Gallery'),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 5,
+                        ),
+                        ElevatedButton(
+                          onPressed: _getImageFromCamera,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.camera_alt),
+                              SizedBox(width: 8),
+                              Text('Camera'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    value: _selectedTag,
-                    items: widget.tags.map((tag) {
-                      return DropdownMenuItem<String>(
-                        value: tag,
-                        child: Text(tag),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTag = value;
-                      });
-                    },
-                  ),
-                ],
+                    if (_image != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16),
+                        child: Image.file(_image!, width: 150, height: 150),
+                      ),
+                    const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Tag',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedTag,
+                      items: widget.tags.map((tag) {
+                        return DropdownMenuItem<String>(
+                          value: tag,
+                          child: Text(tag),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTag = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text(
+            'Cancel',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         TextButton(
           onPressed: () {
-            final taskTitle = _textEditingController.text;
-            if (taskTitle.isNotEmpty) {
-              if (widget.initialTask != null) {
-                Navigator.pop(
-                  context,
-                  TodoItem(
-                    title: taskTitle,
-                    imagePath: _image?.path,
-                    tag: _selectedTag,
-                  ),
-                );
-              } else {
-                final task = TodoItem(
+            if (_formKey.currentState!.validate()) {
+              final taskTitle = _textEditingController.text;
+              if (taskTitle.isNotEmpty) {
+                final newTask = TodoItem(
                   title: taskTitle,
+                  isCompleted: false,
                   imagePath: _image?.path,
                   tag: _selectedTag,
                 );
-                Navigator.pop(context, task);
+                Navigator.pop(context, newTask);
               }
             }
           },
-          child: Text(widget.initialTask != null ? 'Update' : 'Save'),
+          child: Text(
+            widget.initialTask != null ? 'Update' : 'Add',
+            style: const TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );
@@ -671,13 +710,12 @@ class FullScreenImage extends StatelessWidget {
       body: Center(
         child: Hero(
           tag: imagePath ?? '',
-          child: imagePath != null
-              ? Image.file(File(imagePath!))
-              : const Text('No image'),
+          child: Image.file(
+            File(imagePath!),
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );
   }
 }
-
-final List<String> tags = ['Personal', 'Business', 'Shopping', 'Work', 'Other'];
