@@ -80,8 +80,8 @@ class TodoList extends StatefulWidget {
 
 class _TodoListState extends State<TodoList> {
   late Box<TodoItem> _taskBox;
-
-  bool _showCompletedTasks = false; // Track whether to show completed tasks
+  bool _showCompletedTasks = false;
+  String? _selectedTag; // Track selected tag
 
   @override
   void initState() {
@@ -89,10 +89,57 @@ class _TodoListState extends State<TodoList> {
     _taskBox = Hive.box<TodoItem>('tasks');
   }
 
+  // Function to reset the app
+  void _resetApp() async {
+    // Clear the task box
+    await _taskBox.clear();
+    // Reset any other necessary state variables
+    setState(() {
+      _selectedTag = null;
+    });
+  }
+
+  // Function to show a reset confirmation dialog
+  Future<void> _showResetConfirmationDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible:
+          false, // Disallow tapping outside the dialog to dismiss
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Reset App'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to reset the app?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Reset'),
+              onPressed: () {
+                // Clear the task box and reset any necessary state
+                _resetApp();
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2, // Two tabs: "Tasks" and "Completed"
+      length: 2,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('To-Do List'),
@@ -102,18 +149,52 @@ class _TodoListState extends State<TodoList> {
               Tab(text: 'Completed'),
             ],
           ),
+          actions: [
+            // Dropdown to select tags
+            PopupMenuButton<String>(
+              onSelected: (tag) {
+                setState(() {
+                  _selectedTag = tag;
+                });
+              },
+              itemBuilder: (BuildContext context) {
+                // Add "All" option
+                final items = [
+                  'All',
+                  'Personal',
+                  'Business',
+                  'Shopping',
+                  'Work',
+                  'Other'
+                ];
+                return items.map<PopupMenuEntry<String>>((String tag) {
+                  return PopupMenuItem<String>(
+                    value: tag,
+                    child: Text(tag),
+                  );
+                }).toList();
+              },
+            ),
+            // IconButton to reset the app
+            IconButton(
+              onPressed: () => _showResetConfirmationDialog(context),
+              icon:
+                  Icon(Icons.refresh), // You can use any reset icon you prefer
+            ),
+          ],
         ),
         body: TabBarView(
           children: [
-            _buildTasksListView(), // Display tasks
-            _buildCompletedTasksListView(), // Display completed tasks
+            _buildTasksListView(),
+            _buildCompletedTasksListView(),
           ],
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
             final newTask = await showDialog<TodoItem>(
               context: context,
-              builder: (context) => TaskDialog(tags: tags),
+              builder: (context) => TaskDialog(
+                  tags: ['Personal', 'Business', 'Shopping', 'Work', 'Other']),
             );
 
             if (newTask != null) {
@@ -130,7 +211,13 @@ class _TodoListState extends State<TodoList> {
     return ValueListenableBuilder(
       valueListenable: _taskBox.listenable(),
       builder: (context, Box<TodoItem> box, _) {
-        final tasks = box.values.where((task) => !task.isCompleted).toList();
+        final tasks = _selectedTag == 'All'
+            ? box.values.where((task) => !task.isCompleted).toList()
+            : box.values
+                .where(
+                    (task) => !task.isCompleted && (task.tag == _selectedTag))
+                .toList();
+
         return tasks.isEmpty
             ? Center(child: const Text('No tasks'))
             : ListView.builder(
@@ -149,7 +236,13 @@ class _TodoListState extends State<TodoList> {
                               context: context,
                               builder: (context) => TaskDialog(
                                 initialTask: task,
-                                tags: tags,
+                                tags: [
+                                  'Personal',
+                                  'Business',
+                                  'Shopping',
+                                  'Work',
+                                  'Other'
+                                ],
                               ),
                             );
                             if (updatedTask != null) {
@@ -224,7 +317,13 @@ class _TodoListState extends State<TodoList> {
                           context: context,
                           builder: (context) => TaskDialog(
                             initialTask: task,
-                            tags: tags,
+                            tags: [
+                              'Personal',
+                              'Business',
+                              'Shopping',
+                              'Work',
+                              'Other'
+                            ],
                           ),
                         );
 
@@ -249,8 +348,12 @@ class _TodoListState extends State<TodoList> {
     return ValueListenableBuilder(
       valueListenable: _taskBox.listenable(),
       builder: (context, Box<TodoItem> box, _) {
-        final completedTasks =
-            box.values.where((task) => task.isCompleted).toList();
+        final completedTasks = _selectedTag == 'All'
+            ? box.values.where((task) => task.isCompleted).toList()
+            : box.values
+                .where((task) => task.isCompleted && (task.tag == _selectedTag))
+                .toList();
+
         return completedTasks.isEmpty
             ? Center(child: const Text('No completed tasks'))
             : ListView.builder(
@@ -269,7 +372,13 @@ class _TodoListState extends State<TodoList> {
                               context: context,
                               builder: (context) => TaskDialog(
                                 initialTask: task,
-                                tags: tags,
+                                tags: [
+                                  'Personal',
+                                  'Business',
+                                  'Shopping',
+                                  'Work',
+                                  'Other'
+                                ],
                               ),
                             );
                             if (updatedTask != null) {
@@ -344,7 +453,13 @@ class _TodoListState extends State<TodoList> {
                           context: context,
                           builder: (context) => TaskDialog(
                             initialTask: task,
-                            tags: tags,
+                            tags: [
+                              'Personal',
+                              'Business',
+                              'Shopping',
+                              'Work',
+                              'Other'
+                            ],
                           ),
                         );
 
