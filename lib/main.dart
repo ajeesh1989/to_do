@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart';
 // ignore: depend_on_referenced_packages
@@ -41,12 +42,15 @@ class TodoItem extends HiveObject {
   String? imagePath;
   @HiveField(3)
   String? tag;
+  @HiveField(4)
+  DateTime? dateTime;
 
   TodoItem({
     required this.title,
     this.isCompleted = false,
     this.imagePath,
     this.tag,
+    this.dateTime,
   });
 }
 
@@ -61,6 +65,7 @@ class TodoItemAdapter extends TypeAdapter<TodoItem> {
       isCompleted: reader.read(),
       imagePath: reader.read(),
       tag: reader.read(),
+      dateTime: reader.read(),
     );
   }
 
@@ -70,6 +75,7 @@ class TodoItemAdapter extends TypeAdapter<TodoItem> {
     writer.write(obj.isCompleted);
     writer.write(obj.imagePath);
     writer.write(obj.tag);
+    writer.write(obj.dateTime);
   }
 }
 
@@ -83,7 +89,7 @@ class TodoList extends StatefulWidget {
 
 class _TodoListState extends State<TodoList> {
   late Box<TodoItem> _taskBox;
-  String? _selectedTag; // Track selected tag
+  String? _selectedTag;
 
   @override
   void initState() {
@@ -91,22 +97,17 @@ class _TodoListState extends State<TodoList> {
     _taskBox = Hive.box<TodoItem>('tasks');
   }
 
-  // Function to reset the app
   void _resetApp() async {
-    // Clear the task box
     await _taskBox.clear();
-    // Reset any other necessary state variables
     setState(() {
       _selectedTag = null;
     });
   }
 
-  // Function to show a reset confirmation dialog
   Future<void> _showResetConfirmationDialog(BuildContext context) async {
     return showDialog<void>(
       context: context,
-      barrierDismissible:
-          false, // Disallow tapping outside the dialog to dismiss
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Reset App'),
@@ -133,9 +134,8 @@ class _TodoListState extends State<TodoList> {
                 style: TextStyle(color: Colors.white),
               ),
               onPressed: () {
-                // Clear the task box and reset any necessary state
                 _resetApp();
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -149,24 +149,43 @@ class _TodoListState extends State<TodoList> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: Colors.blueGrey.shade900,
         appBar: AppBar(
           title: const Text('To-Do List'),
           bottom: const TabBar(
+            labelStyle: TextStyle(
+              fontSize: 17.0,
+            ), // Adjust the fontSize and fontWeight as needed
             tabs: [
-              Tab(text: 'Tasks'),
-              Tab(text: 'Completed'),
+              Tab(
+                child: Text(
+                  'Tasks',
+                ),
+              ),
+              Tab(
+                child: Text(
+                  'Completed',
+                ),
+              ),
             ],
           ),
           actions: [
-            // Dropdown to select tags
             PopupMenuButton<String>(
+              icon: const Icon(
+                Icons
+                    .arrow_drop_down_circle_outlined, // Change to your preferred icon
+                color: Colors.white, // Change the color if needed
+              ),
+              // child: const Padding(
+              //   padding: EdgeInsets.only(top: 20.0),
+              //   child: Text('Tags'),
+              // ),
               onSelected: (tag) {
                 setState(() {
                   _selectedTag = tag;
                 });
               },
               itemBuilder: (BuildContext context) {
-                // Add "All" option
                 final items = [
                   'All',
                   'Personal',
@@ -183,14 +202,14 @@ class _TodoListState extends State<TodoList> {
                 }).toList();
               },
             ),
-            // IconButton to reset the app
             IconButton(
               onPressed: () => _showResetConfirmationDialog(context),
-              icon: const Icon(
-                  Icons.refresh), // You can use any reset icon you prefer
+              icon: const Icon(Icons.refresh),
             ),
           ],
+          backgroundColor: Colors.grey.shade900,
         ),
+        drawer: const Drawer(),
         body: TabBarView(
           children: [
             _buildTasksListView(),
@@ -202,7 +221,8 @@ class _TodoListState extends State<TodoList> {
             final newTask = await showDialog<TodoItem>(
               context: context,
               builder: (context) => const TaskDialog(
-                  tags: ['Personal', 'Business', 'Shopping', 'Work', 'Other']),
+                tags: ['Personal', 'Business', 'Shopping', 'Work', 'Other'],
+              ),
             );
 
             if (newTask != null) {
@@ -216,6 +236,8 @@ class _TodoListState extends State<TodoList> {
   }
 
   Widget _buildTasksListView() {
+    _selectedTag ??= 'All';
+
     return ValueListenableBuilder(
       valueListenable: _taskBox.listenable(),
       builder: (context, Box<TodoItem> box, _) {
@@ -233,119 +255,134 @@ class _TodoListState extends State<TodoList> {
                 itemBuilder: (context, index) {
                   final task = tasks[index];
                   return Slidable(
-                    endActionPane: ActionPane(
-                      motion: const StretchMotion(),
-                      children: [
-                        SlidableAction(
-                          icon: Icons.edit,
-                          backgroundColor: Colors.green.shade200,
-                          onPressed: (context) async {
-                            final updatedTask = await showDialog<TodoItem>(
-                              context: context,
-                              builder: (context) => TaskDialog(
-                                initialTask: task,
-                                tags: const [
-                                  'Personal',
-                                  'Business',
-                                  'Shopping',
-                                  'Work',
-                                  'Other'
-                                ],
+                      endActionPane: ActionPane(
+                        motion: const StretchMotion(),
+                        children: [
+                          SlidableAction(
+                            icon: Icons.edit,
+                            backgroundColor: Colors.green.shade200,
+                            onPressed: (context) async {
+                              final updatedTask = await showDialog<TodoItem>(
+                                context: context,
+                                builder: (context) => TaskDialog(
+                                  initialTask: task,
+                                  tags: const [
+                                    'Personal',
+                                    'Business',
+                                    'Shopping',
+                                    'Work',
+                                    'Other'
+                                  ],
+                                ),
+                              );
+                              if (updatedTask != null) {
+                                setState(() {
+                                  task.title = updatedTask.title;
+                                  task.imagePath = updatedTask.imagePath;
+                                  task.tag = updatedTask.tag;
+                                  task.dateTime = updatedTask.dateTime;
+                                });
+                                task.save();
+                              }
+                            },
+                          ),
+                          SlidableAction(
+                            icon: Icons.delete,
+                            backgroundColor: Colors.red.shade200,
+                            onPressed: (context) {
+                              _taskBox.delete(task.key);
+                            },
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0), // Adjust padding as needed
+                        title: Text(
+                          task.title,
+                          style: TextStyle(
+                            fontSize: 17.0, // Adjust the fontSize as needed
+                            decoration: task.isCompleted
+                                ? TextDecoration.lineThrough
+                                : TextDecoration.none,
+                          ),
+                        ),
+                        subtitle: task.dateTime != null
+                            ? Text(
+                                DateFormat('dd MMMM y, hh:mm a')
+                                    .format(task.dateTime!),
+                                style: const TextStyle(
+                                  fontSize:
+                                      14.0, // Adjust the fontSize as needed
+                                ),
+                              )
+                            : null, // Only show subtitle if dateTime is not null
+                        leading: Checkbox(
+                          value: task.isCompleted,
+                          onChanged: (value) {
+                            setState(() {
+                              task.isCompleted = value!;
+                            });
+                            task.save();
+                          },
+                        ),
+                        trailing: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return FullScreenImage(
+                                    imagePath: task.imagePath,
+                                  );
+                                },
                               ),
                             );
-                            if (updatedTask != null) {
-                              setState(() {
-                                task.title = updatedTask.title;
-                                task.imagePath = updatedTask.imagePath;
-                                task.tag = updatedTask.tag;
-                              });
-                              task.save();
-                            }
                           },
+                          child: Hero(
+                            tag: task.imagePath ?? '',
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: task.imagePath != null
+                                    ? DecorationImage(
+                                        image: FileImage(File(task.imagePath!)),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ),
                         ),
-                        SlidableAction(
-                          icon: Icons.delete,
-                          backgroundColor: Colors.red.shade200,
-                          onPressed: (context) {
-                            _taskBox.delete(task.key);
-                          },
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        task.title,
-                        style: TextStyle(
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                        ),
-                      ),
-                      leading: Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (value) {
-                          setState(() {
-                            task.isCompleted = value!;
-                          });
-                          task.save();
-                        },
-                      ),
-                      trailing: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return FullScreenImage(
-                                  imagePath: task.imagePath,
-                                );
-                              },
+                        onTap: () async {
+                          final updatedTask = await showDialog<TodoItem>(
+                            context: context,
+                            builder: (context) => TaskDialog(
+                              initialTask: task,
+                              tags: const [
+                                'Personal',
+                                'Business',
+                                'Shopping',
+                                'Work',
+                                'Other',
+                              ],
                             ),
                           );
-                        },
-                        child: Hero(
-                          tag: task.imagePath ?? '',
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: task.imagePath != null
-                                  ? DecorationImage(
-                                      image: FileImage(File(task.imagePath!)),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final updatedTask = await showDialog<TodoItem>(
-                          context: context,
-                          builder: (context) => TaskDialog(
-                            initialTask: task,
-                            tags: const [
-                              'Personal',
-                              'Business',
-                              'Shopping',
-                              'Work',
-                              'Other'
-                            ],
-                          ),
-                        );
 
-                        if (updatedTask != null) {
-                          setState(() {
-                            task.title = updatedTask.title;
-                            task.imagePath = updatedTask.imagePath;
-                            task.tag = updatedTask.tag;
-                          });
-                          task.save();
-                        }
-                      },
-                    ),
-                  );
+                          if (updatedTask != null) {
+                            setState(() {
+                              task.title = updatedTask.title;
+                              task.imagePath = updatedTask.imagePath;
+                              task.tag = updatedTask.tag;
+                              task.dateTime = updatedTask.dateTime;
+                            });
+                            task.save();
+                          }
+                        },
+                      ));
                 },
               );
       },
@@ -353,6 +390,8 @@ class _TodoListState extends State<TodoList> {
   }
 
   Widget _buildCompletedTasksListView() {
+    _selectedTag ??= 'All';
+
     return ValueListenableBuilder(
       valueListenable: _taskBox.listenable(),
       builder: (context, Box<TodoItem> box, _) {
@@ -369,13 +408,109 @@ class _TodoListState extends State<TodoList> {
                 itemBuilder: (context, index) {
                   final task = completedTasks[index];
                   return Slidable(
-                    endActionPane: ActionPane(
-                      motion: const StretchMotion(),
-                      children: [
-                        SlidableAction(
-                          icon: Icons.edit,
-                          backgroundColor: Colors.green.shade200,
-                          onPressed: (context) async {
+                      endActionPane: ActionPane(
+                        motion: const StretchMotion(),
+                        children: [
+                          SlidableAction(
+                            icon: Icons.edit,
+                            backgroundColor: Colors.green.shade200,
+                            onPressed: (context) async {
+                              final updatedTask = await showDialog<TodoItem>(
+                                context: context,
+                                builder: (context) => TaskDialog(
+                                  initialTask: task,
+                                  tags: const [
+                                    'Personal',
+                                    'Business',
+                                    'Shopping',
+                                    'Work',
+                                    'Other'
+                                  ],
+                                ),
+                              );
+                              if (updatedTask != null) {
+                                setState(() {
+                                  task.title = updatedTask.title;
+                                  task.imagePath = updatedTask.imagePath;
+                                  task.tag = updatedTask.tag;
+                                  task.dateTime = updatedTask.dateTime;
+                                });
+                                task.save();
+                              }
+                            },
+                          ),
+                          SlidableAction(
+                            icon: Icons.delete,
+                            backgroundColor: Colors.red.shade200,
+                            onPressed: (context) {
+                              _taskBox.delete(task.key);
+                            },
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        alignment:
+                            Alignment.centerLeft, // Adjust alignment as needed
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0,
+                              vertical: 8.0), // Adjust padding as needed
+                          title: Text(
+                            task.title,
+                            style: TextStyle(
+                              decoration: task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
+                            ),
+                          ),
+                          subtitle: task.dateTime != null
+                              ? Text(
+                                  DateFormat.yMd()
+                                      .add_jm()
+                                      .format(task.dateTime!),
+                                )
+                              : null, // Only show subtitle if dateTime is not null
+                          leading: Checkbox(
+                            value: task.isCompleted,
+                            onChanged: (value) {
+                              setState(() {
+                                task.isCompleted = value!;
+                              });
+                              task.save();
+                            },
+                          ),
+                          trailing: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return FullScreenImage(
+                                      imagePath: task.imagePath,
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                            child: Hero(
+                              tag: task.imagePath ?? '',
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: task.imagePath != null
+                                      ? DecorationImage(
+                                          image:
+                                              FileImage(File(task.imagePath!)),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: () async {
                             final updatedTask = await showDialog<TodoItem>(
                               context: context,
                               builder: (context) => TaskDialog(
@@ -385,103 +520,23 @@ class _TodoListState extends State<TodoList> {
                                   'Business',
                                   'Shopping',
                                   'Work',
-                                  'Other'
+                                  'Other',
                                 ],
                               ),
                             );
+
                             if (updatedTask != null) {
                               setState(() {
                                 task.title = updatedTask.title;
                                 task.imagePath = updatedTask.imagePath;
                                 task.tag = updatedTask.tag;
+                                task.dateTime = updatedTask.dateTime;
                               });
                               task.save();
                             }
                           },
                         ),
-                        SlidableAction(
-                          icon: Icons.delete,
-                          backgroundColor: Colors.red.shade200,
-                          onPressed: (context) {
-                            _taskBox.delete(task.key);
-                          },
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      title: Text(
-                        task.title,
-                        style: TextStyle(
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : TextDecoration.none,
-                        ),
-                      ),
-                      leading: Checkbox(
-                        value: task.isCompleted,
-                        onChanged: (value) {
-                          setState(() {
-                            task.isCompleted = value!;
-                          });
-                          task.save();
-                        },
-                      ),
-                      trailing: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return FullScreenImage(
-                                  imagePath: task.imagePath,
-                                );
-                              },
-                            ),
-                          );
-                        },
-                        child: Hero(
-                          tag: task.imagePath ?? '',
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              image: task.imagePath != null
-                                  ? DecorationImage(
-                                      image: FileImage(File(task.imagePath!)),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ),
-                      ),
-                      onTap: () async {
-                        final updatedTask = await showDialog<TodoItem>(
-                          context: context,
-                          builder: (context) => TaskDialog(
-                            initialTask: task,
-                            tags: const [
-                              'Personal',
-                              'Business',
-                              'Shopping',
-                              'Work',
-                              'Other'
-                            ],
-                          ),
-                        );
-
-                        if (updatedTask != null) {
-                          setState(() {
-                            task.title = updatedTask.title;
-                            task.imagePath = updatedTask.imagePath;
-                            task.tag = updatedTask.tag;
-                          });
-                          task.save();
-                        }
-                      },
-                    ),
-                  );
+                      ));
                 },
               );
       },
@@ -505,6 +560,7 @@ class _TaskDialogState extends State<TaskDialog> {
   final TextEditingController _textEditingController = TextEditingController();
   File? _image;
   String? _selectedTag;
+  DateTime? _selectedDateTime;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -516,6 +572,7 @@ class _TaskDialogState extends State<TaskDialog> {
           ? File(widget.initialTask!.imagePath!)
           : null;
       _selectedTag = widget.initialTask!.tag;
+      _selectedDateTime = widget.initialTask!.dateTime;
     }
   }
 
@@ -553,6 +610,12 @@ class _TaskDialogState extends State<TaskDialog> {
         _image = savedImage;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _textEditingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -611,8 +674,6 @@ class _TaskDialogState extends State<TaskDialog> {
                           child: const Row(
                             children: [
                               Icon(Icons.photo_library),
-                              SizedBox(width: 8),
-                              Text('Gallery'),
                             ],
                           ),
                         ),
@@ -627,8 +688,6 @@ class _TaskDialogState extends State<TaskDialog> {
                           child: const Row(
                             children: [
                               Icon(Icons.camera_alt),
-                              SizedBox(width: 8),
-                              Text('Camera'),
                             ],
                           ),
                         ),
@@ -658,6 +717,53 @@ class _TaskDialogState extends State<TaskDialog> {
                         });
                       },
                     ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final selectedDate = await showDatePicker(
+                          context: context,
+                          initialDate: _selectedDateTime ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2101),
+                        );
+
+                        if (selectedDate != null) {
+                          // ignore: use_build_context_synchronously
+                          final selectedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.fromDateTime(
+                              _selectedDateTime ?? DateTime.now(),
+                            ),
+                          );
+
+                          if (selectedTime != null) {
+                            setState(() {
+                              _selectedDateTime = DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                                selectedTime.hour,
+                                selectedTime.minute,
+                              );
+                            });
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.teal, // Set the background color to teal
+                      ),
+                      child: const Text(
+                        'Pick Date & Time',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    Text(
+                      _selectedDateTime != null
+                          ? DateFormat.yMd().add_jm().format(_selectedDateTime!)
+                          : '',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ],
                 ),
               ),
@@ -676,16 +782,14 @@ class _TaskDialogState extends State<TaskDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              final taskTitle = _textEditingController.text;
-              if (taskTitle.isNotEmpty) {
-                final newTask = TodoItem(
-                  title: taskTitle,
-                  isCompleted: false,
-                  imagePath: _image?.path,
-                  tag: _selectedTag,
-                );
-                Navigator.pop(context, newTask);
-              }
+              final newTask = TodoItem(
+                title: _textEditingController.text,
+                isCompleted: false,
+                imagePath: _image?.path,
+                tag: _selectedTag,
+                dateTime: _selectedDateTime, // Assign DateTime
+              );
+              Navigator.of(context).pop(newTask);
             }
           },
           child: Text(
@@ -698,6 +802,97 @@ class _TaskDialogState extends State<TaskDialog> {
   }
 }
 
+class DateTimePicker extends StatefulWidget {
+  final DateTime? selectedDateTime;
+  final ValueChanged<DateTime?> onDateTimeChanged;
+
+  const DateTimePicker({
+    Key? key,
+    required this.selectedDateTime,
+    required this.onDateTimeChanged,
+  }) : super(key: key);
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _DateTimePickerState createState() => _DateTimePickerState();
+}
+
+class _DateTimePickerState extends State<DateTimePicker> {
+  @override
+  Widget build(BuildContext context) {
+    final themeData = Theme.of(context);
+    final textTheme = themeData.textTheme;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          "Select Date and Time",
+          style: textTheme.bodySmall,
+        ),
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: Colors.grey.shade300,
+            ),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: InkWell(
+            onTap: () => _selectDate(context),
+            child: Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(8),
+              child: Text(
+                widget.selectedDateTime != null
+                    ? DateFormat('dd MMMM y, hh:mm a')
+                        .format(widget.selectedDateTime!)
+                    : 'Select Date and Time',
+                style: widget.selectedDateTime != null
+                    ? textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).primaryColor,
+                      )
+                    : textTheme.titleMedium,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: widget.selectedDateTime ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+
+    if (pickedDate != null) {
+      // ignore: use_build_context_synchronously
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime:
+            TimeOfDay.fromDateTime(widget.selectedDateTime ?? DateTime.now()),
+      );
+
+      if (pickedTime != null) {
+        final newDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        widget.onDateTimeChanged(newDateTime);
+      }
+    }
+  }
+}
+
 class FullScreenImage extends StatelessWidget {
   final String? imagePath;
 
@@ -706,7 +901,9 @@ class FullScreenImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: const Text('Image'),
+      ),
       body: Center(
         child: Hero(
           tag: imagePath ?? '',

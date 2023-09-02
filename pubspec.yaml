@@ -39,6 +39,8 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   flutter_slidable: ^3.0.0
+  intl: ^0.18.1
+  flutter_local_notifications: ^15.1.1
 
 dev_dependencies:
   flutter_test:

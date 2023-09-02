@@ -4,7 +4,7 @@
 <uses-permission android:name="android.permission.CAMERA" />
 
     <application
-        android:label="to_do"
+        android:label="To Do List"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
