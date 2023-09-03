@@ -189,6 +189,7 @@ class _TodoListState extends State<TodoList> {
                 final items = [
                   'All',
                   'Personal',
+                  'Home',
                   'Business',
                   'Shopping',
                   'Work',
@@ -209,27 +210,50 @@ class _TodoListState extends State<TodoList> {
           ],
           backgroundColor: Colors.grey.shade900,
         ),
-        drawer: const Drawer(),
         body: TabBarView(
           children: [
             _buildTasksListView(),
             _buildCompletedTasksListView(),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final newTask = await showDialog<TodoItem>(
-              context: context,
-              builder: (context) => const TaskDialog(
-                tags: ['Personal', 'Business', 'Shopping', 'Work', 'Other'],
+        floatingActionButton: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black38
+                    .withOpacity(0.3), // Adjust opacity for a subtle shadow
+                spreadRadius:
+                    8, // Reduce the spread radius for a smoother shadow
+                blurRadius: 15, // Reduce the blur radius for a smoother shadow
+                offset: const Offset(0, 3), // Offset from the FAB
               ),
-            );
+            ],
+          ),
+          child: FloatingActionButton(
+            backgroundColor: Colors.blueGrey.shade700,
+            elevation: 0, // Remove the default elevation
+            onPressed: () async {
+              final newTask = await showDialog<TodoItem>(
+                context: context,
+                builder: (context) => const TaskDialog(
+                  tags: [
+                    'Personal',
+                    'Home',
+                    'Business',
+                    'Shopping',
+                    'Work',
+                    'Other'
+                  ],
+                ),
+              );
 
-            if (newTask != null) {
-              _taskBox.add(newTask);
-            }
-          },
-          child: const Icon(Icons.add),
+              if (newTask != null) {
+                _taskBox.add(newTask);
+              }
+            },
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
         ),
       ),
     );
@@ -254,7 +278,17 @@ class _TodoListState extends State<TodoList> {
                 itemCount: tasks.length,
                 itemBuilder: (context, index) {
                   final task = tasks[index];
-                  return Slidable(
+                  return Card(
+                    color: const Color.fromARGB(255, 41, 55, 62),
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 16.0),
+                    elevation: 10, // Add elevation for a card-like appearance
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          15.0), // Adjust the border radius as needed
+                    ),
+                    shadowColor: Colors.grey.shade900, // Color of the shadow
+                    child: Slidable(
                       endActionPane: ActionPane(
                         motion: const StretchMotion(),
                         children: [
@@ -268,6 +302,7 @@ class _TodoListState extends State<TodoList> {
                                   initialTask: task,
                                   tags: const [
                                     'Personal',
+                                    'Home',
                                     'Business',
                                     'Shopping',
                                     'Work',
@@ -364,6 +399,7 @@ class _TodoListState extends State<TodoList> {
                               initialTask: task,
                               tags: const [
                                 'Personal',
+                                'Home',
                                 'Business',
                                 'Shopping',
                                 'Work',
@@ -382,7 +418,9 @@ class _TodoListState extends State<TodoList> {
                             task.save();
                           }
                         },
-                      ));
+                      ),
+                    ),
+                  );
                 },
               );
       },
@@ -407,7 +445,18 @@ class _TodoListState extends State<TodoList> {
                 itemCount: completedTasks.length,
                 itemBuilder: (context, index) {
                   final task = completedTasks[index];
-                  return Slidable(
+                  return Card(
+                    color: const Color.fromARGB(255, 41, 55, 62),
+                    margin: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 16.0),
+                    elevation: 10, // Add elevation for a card-like appearance
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          15.0), // Adjust the border radius as needed
+                    ),
+                    shadowColor: Colors.grey
+                        .shade900, // Color of the shadow.withOpacity(0.2), // Set shadow color to light white
+                    child: Slidable(
                       endActionPane: ActionPane(
                         motion: const StretchMotion(),
                         children: [
@@ -421,6 +470,7 @@ class _TodoListState extends State<TodoList> {
                                   initialTask: task,
                                   tags: const [
                                     'Personal',
+                                    'Home',
                                     'Business',
                                     'Shopping',
                                     'Work',
@@ -517,6 +567,7 @@ class _TodoListState extends State<TodoList> {
                                 initialTask: task,
                                 tags: const [
                                   'Personal',
+                                  'Home',
                                   'Business',
                                   'Shopping',
                                   'Work',
@@ -536,7 +587,9 @@ class _TodoListState extends State<TodoList> {
                             }
                           },
                         ),
-                      ));
+                      ),
+                    ),
+                  );
                 },
               );
       },
@@ -621,7 +674,13 @@ class _TaskDialogState extends State<TaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.initialTask != null ? 'Edit Task' : 'Add Task'),
+      backgroundColor: Colors.blueGrey.shade900,
+      title: Text(
+        widget.initialTask != null ? 'Edit Task' : 'Add Task',
+        style: const TextStyle(
+          color: Colors.white, // Title text color
+        ),
+      ),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -708,7 +767,8 @@ class _TaskDialogState extends State<TaskDialog> {
                       items: widget.tags.map((tag) {
                         return DropdownMenuItem<String>(
                           value: tag,
-                          child: Text(tag),
+                          child: Text(tag,
+                              style: const TextStyle(color: Colors.white)),
                         );
                       }).toList(),
                       onChanged: (value) {
