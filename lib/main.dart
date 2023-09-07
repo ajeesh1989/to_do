@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-// ignore: depend_on_referenced_packages
 import 'package:path/path.dart';
-// ignore: depend_on_referenced_packages
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -83,7 +81,6 @@ class TodoList extends StatefulWidget {
   const TodoList({Key? key}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _TodoListState createState() => _TodoListState();
 }
 
@@ -144,8 +141,22 @@ class _TodoListState extends State<TodoList> {
     );
   }
 
+  Map<String?, int> countTasksByTag(Box<TodoItem> box) {
+    final tagCounts = <String?, int>{};
+    for (final task in box.values) {
+      final tag = task.tag;
+      if (tag != null) {
+        tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+      }
+    }
+    return tagCounts;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // final tagCounts = countTasksByTag(_taskBox);
+    // String? _selectedTagError;
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -155,7 +166,7 @@ class _TodoListState extends State<TodoList> {
           bottom: const TabBar(
             labelStyle: TextStyle(
               fontSize: 17.0,
-            ), // Adjust the fontSize and fontWeight as needed
+            ),
             tabs: [
               Tab(
                 child: Text(
@@ -176,10 +187,6 @@ class _TodoListState extends State<TodoList> {
                     .arrow_drop_down_circle_outlined, // Change to your preferred icon
                 color: Colors.white, // Change the color if needed
               ),
-              // child: const Padding(
-              //   padding: EdgeInsets.only(top: 20.0),
-              //   child: Text('Tags'),
-              // ),
               onSelected: (tag) {
                 setState(() {
                   _selectedTag = tag;
@@ -195,10 +202,34 @@ class _TodoListState extends State<TodoList> {
                   'Work',
                   'Other'
                 ];
-                return items.map<PopupMenuEntry<String>>((String tag) {
+
+                // Create a map to count the tags
+                final tagCountMap = <String, int>{};
+                for (final task in _taskBox.values) {
+                  final tag = task.tag ??
+                      'No Tags'; // Use 'No Tags' for tasks with no tags
+                  tagCountMap[tag] = (tagCountMap[tag] ?? 0) + 1;
+                }
+
+                // Calculate the total count for all tags
+                final totalCount =
+                    tagCountMap.values.fold(0, (sum, count) => sum + count);
+
+                return items
+                    .where((tag) =>
+                        tag == 'All' ||
+                        tagCountMap[tag] != null &&
+                            tagCountMap[tag]! >
+                                0) // Filter tags that are selected or have counts
+                    .map<PopupMenuEntry<String>>((String tag) {
+                  final count = tag == 'All'
+                      ? totalCount
+                      : (tagCountMap[tag] ??
+                          0); // Display total count for "All" tag
                   return PopupMenuItem<String>(
                     value: tag,
-                    child: Text(tag),
+                    child: Text(
+                        '$tag (${count.toString()})'), // Display count in brackets
                   );
                 }).toList();
               },
@@ -221,18 +252,16 @@ class _TodoListState extends State<TodoList> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black38
-                    .withOpacity(0.3), // Adjust opacity for a subtle shadow
-                spreadRadius:
-                    8, // Reduce the spread radius for a smoother shadow
-                blurRadius: 15, // Reduce the blur radius for a smoother shadow
-                offset: const Offset(0, 3), // Offset from the FAB
+                color: Colors.black38.withOpacity(0.3),
+                spreadRadius: 8,
+                blurRadius: 15,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: FloatingActionButton(
             backgroundColor: Colors.blueGrey.shade700,
-            elevation: 0, // Remove the default elevation
+            elevation: 0,
             onPressed: () async {
               final newTask = await showDialog<TodoItem>(
                 context: context,
@@ -243,7 +272,7 @@ class _TodoListState extends State<TodoList> {
                     'Business',
                     'Shopping',
                     'Work',
-                    'Other'
+                    'Other',
                   ],
                 ),
               );
@@ -278,58 +307,205 @@ class _TodoListState extends State<TodoList> {
                 itemCount: tasks.length,
                 itemBuilder: (context, index) {
                   final task = tasks[index];
-                  return Card(
-                    color: const Color.fromARGB(255, 41, 55, 62),
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
-                    elevation: 10, // Add elevation for a card-like appearance
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          15.0), // Adjust the border radius as needed
+                  return Slidable(
+                    endActionPane: ActionPane(
+                      motion: const StretchMotion(),
+                      children: [
+                        SlidableAction(
+                          icon: Icons.edit,
+                          backgroundColor: Colors.green.shade200,
+                          onPressed: (context) async {
+                            final updatedTask = await showDialog<TodoItem>(
+                              context: context,
+                              builder: (context) => TaskDialog(
+                                initialTask: task,
+                                tags: const [
+                                  'Personal',
+                                  'Home',
+                                  'Business',
+                                  'Shopping',
+                                  'Work',
+                                  'Other'
+                                ],
+                              ),
+                            );
+                            if (updatedTask != null) {
+                              setState(() {
+                                task.title = updatedTask.title;
+                                task.imagePath = updatedTask.imagePath;
+                                task.tag = updatedTask.tag;
+                                task.dateTime = updatedTask.dateTime;
+                              });
+                              task.save();
+                            }
+                          },
+                        ),
+                        SlidableAction(
+                          icon: Icons.delete,
+                          backgroundColor: Colors.red.shade200,
+                          onPressed: (context) {
+                            _taskBox.delete(task.key);
+                          },
+                        ),
+                      ],
                     ),
-                    shadowColor: Colors.grey.shade900, // Color of the shadow
-                    child: Slidable(
-                      endActionPane: ActionPane(
-                        motion: const StretchMotion(),
-                        children: [
-                          SlidableAction(
-                            icon: Icons.edit,
-                            backgroundColor: Colors.green.shade200,
-                            onPressed: (context) async {
-                              final updatedTask = await showDialog<TodoItem>(
-                                context: context,
-                                builder: (context) => TaskDialog(
-                                  initialTask: task,
-                                  tags: const [
-                                    'Personal',
-                                    'Home',
-                                    'Business',
-                                    'Shopping',
-                                    'Work',
-                                    'Other'
-                                  ],
-                                ),
-                              );
-                              if (updatedTask != null) {
-                                setState(() {
-                                  task.title = updatedTask.title;
-                                  task.imagePath = updatedTask.imagePath;
-                                  task.tag = updatedTask.tag;
-                                  task.dateTime = updatedTask.dateTime;
-                                });
-                                task.save();
-                              }
-                            },
-                          ),
-                          SlidableAction(
-                            icon: Icons.delete,
-                            backgroundColor: Colors.red.shade200,
-                            onPressed: (context) {
-                              _taskBox.delete(task.key);
-                            },
-                          ),
-                        ],
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 8.0), // Adjust padding as needed
+                      title: Text(
+                        task.title,
+                        style: TextStyle(
+                          fontSize: 17.0, // Adjust the fontSize as needed
+                          decoration: task.isCompleted
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
                       ),
+                      subtitle: task.dateTime != null
+                          ? Text(
+                              DateFormat('dd MMMM y, hh:mm a')
+                                  .format(task.dateTime!),
+                              style: const TextStyle(
+                                fontSize: 14.0, // Adjust the fontSize as needed
+                              ),
+                            )
+                          : null, // Only show subtitle if dateTime is not null
+                      leading: Checkbox(
+                        value: task.isCompleted,
+                        onChanged: (value) {
+                          setState(() {
+                            task.isCompleted = value!;
+                          });
+                          task.save();
+                        },
+                      ),
+                      trailing: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) {
+                                return FullScreenImage(
+                                  imagePath: task.imagePath,
+                                );
+                              },
+                            ),
+                          );
+                        },
+                        child: Hero(
+                          tag: task.imagePath ?? '',
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: task.imagePath != null
+                                  ? DecorationImage(
+                                      image: FileImage(File(task.imagePath!)),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                      onTap: () async {
+                        final updatedTask = await showDialog<TodoItem>(
+                          context: context,
+                          builder: (context) => TaskDialog(
+                            initialTask: task,
+                            tags: const [
+                              'Personal',
+                              'Home',
+                              'Business',
+                              'Shopping',
+                              'Work',
+                              'Other',
+                            ],
+                          ),
+                        );
+
+                        if (updatedTask != null) {
+                          setState(() {
+                            task.title = updatedTask.title;
+                            task.imagePath = updatedTask.imagePath;
+                            task.tag = updatedTask.tag;
+                            task.dateTime = updatedTask.dateTime;
+                          });
+                          task.save();
+                        }
+                      },
+                    ),
+                  );
+                });
+      },
+    );
+  }
+
+  Widget _buildCompletedTasksListView() {
+    _selectedTag ??= 'All';
+
+    return ValueListenableBuilder(
+      valueListenable: _taskBox.listenable(),
+      builder: (context, Box<TodoItem> box, _) {
+        final completedTasks = _selectedTag == 'All'
+            ? box.values.where((task) => task.isCompleted).toList()
+            : box.values
+                .where((task) => task.isCompleted && (task.tag == _selectedTag))
+                .toList();
+
+        return completedTasks.isEmpty
+            ? const Center(child: Text('No completed tasks'))
+            : ListView.builder(
+                itemCount: completedTasks.length,
+                itemBuilder: (context, index) {
+                  final task = completedTasks[index];
+                  return Slidable(
+                    endActionPane: ActionPane(
+                      motion: const StretchMotion(),
+                      children: [
+                        SlidableAction(
+                          icon: Icons.edit,
+                          backgroundColor: Colors.green.shade200,
+                          onPressed: (context) async {
+                            final updatedTask = await showDialog<TodoItem>(
+                              context: context,
+                              builder: (context) => TaskDialog(
+                                initialTask: task,
+                                tags: const [
+                                  'Personal',
+                                  'Home',
+                                  'Business',
+                                  'Shopping',
+                                  'Work',
+                                  'Other'
+                                ],
+                              ),
+                            );
+                            if (updatedTask != null) {
+                              setState(() {
+                                task.title = updatedTask.title;
+                                task.imagePath = updatedTask.imagePath;
+                                task.tag = updatedTask.tag;
+                                task.dateTime = updatedTask.dateTime;
+                              });
+                              task.save();
+                            }
+                          },
+                        ),
+                        SlidableAction(
+                          icon: Icons.delete,
+                          backgroundColor: Colors.red.shade200,
+                          onPressed: (context) {
+                            _taskBox.delete(task.key);
+                          },
+                        ),
+                      ],
+                    ),
+                    child: Container(
+                      alignment:
+                          Alignment.centerLeft, // Adjust alignment as needed
                       child: ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16.0,
@@ -337,7 +513,6 @@ class _TodoListState extends State<TodoList> {
                         title: Text(
                           task.title,
                           style: TextStyle(
-                            fontSize: 17.0, // Adjust the fontSize as needed
                             decoration: task.isCompleted
                                 ? TextDecoration.lineThrough
                                 : TextDecoration.none,
@@ -345,12 +520,9 @@ class _TodoListState extends State<TodoList> {
                         ),
                         subtitle: task.dateTime != null
                             ? Text(
-                                DateFormat('dd MMMM y, hh:mm a')
+                                DateFormat.yMd()
+                                    .add_jm()
                                     .format(task.dateTime!),
-                                style: const TextStyle(
-                                  fontSize:
-                                      14.0, // Adjust the fontSize as needed
-                                ),
                               )
                             : null, // Only show subtitle if dateTime is not null
                         leading: Checkbox(
@@ -426,175 +598,6 @@ class _TodoListState extends State<TodoList> {
       },
     );
   }
-
-  Widget _buildCompletedTasksListView() {
-    _selectedTag ??= 'All';
-
-    return ValueListenableBuilder(
-      valueListenable: _taskBox.listenable(),
-      builder: (context, Box<TodoItem> box, _) {
-        final completedTasks = _selectedTag == 'All'
-            ? box.values.where((task) => task.isCompleted).toList()
-            : box.values
-                .where((task) => task.isCompleted && (task.tag == _selectedTag))
-                .toList();
-
-        return completedTasks.isEmpty
-            ? const Center(child: Text('No completed tasks'))
-            : ListView.builder(
-                itemCount: completedTasks.length,
-                itemBuilder: (context, index) {
-                  final task = completedTasks[index];
-                  return Card(
-                    color: const Color.fromARGB(255, 41, 55, 62),
-                    margin: const EdgeInsets.symmetric(
-                        vertical: 8.0, horizontal: 16.0),
-                    elevation: 10, // Add elevation for a card-like appearance
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(
-                          15.0), // Adjust the border radius as needed
-                    ),
-                    shadowColor: Colors.grey
-                        .shade900, // Color of the shadow.withOpacity(0.2), // Set shadow color to light white
-                    child: Slidable(
-                      endActionPane: ActionPane(
-                        motion: const StretchMotion(),
-                        children: [
-                          SlidableAction(
-                            icon: Icons.edit,
-                            backgroundColor: Colors.green.shade200,
-                            onPressed: (context) async {
-                              final updatedTask = await showDialog<TodoItem>(
-                                context: context,
-                                builder: (context) => TaskDialog(
-                                  initialTask: task,
-                                  tags: const [
-                                    'Personal',
-                                    'Home',
-                                    'Business',
-                                    'Shopping',
-                                    'Work',
-                                    'Other'
-                                  ],
-                                ),
-                              );
-                              if (updatedTask != null) {
-                                setState(() {
-                                  task.title = updatedTask.title;
-                                  task.imagePath = updatedTask.imagePath;
-                                  task.tag = updatedTask.tag;
-                                  task.dateTime = updatedTask.dateTime;
-                                });
-                                task.save();
-                              }
-                            },
-                          ),
-                          SlidableAction(
-                            icon: Icons.delete,
-                            backgroundColor: Colors.red.shade200,
-                            onPressed: (context) {
-                              _taskBox.delete(task.key);
-                            },
-                          ),
-                        ],
-                      ),
-                      child: Container(
-                        alignment:
-                            Alignment.centerLeft, // Adjust alignment as needed
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                              vertical: 8.0), // Adjust padding as needed
-                          title: Text(
-                            task.title,
-                            style: TextStyle(
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
-                            ),
-                          ),
-                          subtitle: task.dateTime != null
-                              ? Text(
-                                  DateFormat.yMd()
-                                      .add_jm()
-                                      .format(task.dateTime!),
-                                )
-                              : null, // Only show subtitle if dateTime is not null
-                          leading: Checkbox(
-                            value: task.isCompleted,
-                            onChanged: (value) {
-                              setState(() {
-                                task.isCompleted = value!;
-                              });
-                              task.save();
-                            },
-                          ),
-                          trailing: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) {
-                                    return FullScreenImage(
-                                      imagePath: task.imagePath,
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                            child: Hero(
-                              tag: task.imagePath ?? '',
-                              child: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: task.imagePath != null
-                                      ? DecorationImage(
-                                          image:
-                                              FileImage(File(task.imagePath!)),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                          onTap: () async {
-                            final updatedTask = await showDialog<TodoItem>(
-                              context: context,
-                              builder: (context) => TaskDialog(
-                                initialTask: task,
-                                tags: const [
-                                  'Personal',
-                                  'Home',
-                                  'Business',
-                                  'Shopping',
-                                  'Work',
-                                  'Other',
-                                ],
-                              ),
-                            );
-
-                            if (updatedTask != null) {
-                              setState(() {
-                                task.title = updatedTask.title;
-                                task.imagePath = updatedTask.imagePath;
-                                task.tag = updatedTask.tag;
-                                task.dateTime = updatedTask.dateTime;
-                              });
-                              task.save();
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-      },
-    );
-  }
 }
 
 class TaskDialog extends StatefulWidget {
@@ -605,7 +608,6 @@ class TaskDialog extends StatefulWidget {
       : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _TaskDialogState createState() => _TaskDialogState();
 }
 
@@ -615,6 +617,7 @@ class _TaskDialogState extends State<TaskDialog> {
   String? _selectedTag;
   DateTime? _selectedDateTime;
   final _formKey = GlobalKey<FormState>();
+  String? _selectedTagError;
 
   @override
   void initState() {
@@ -759,9 +762,11 @@ class _TaskDialogState extends State<TaskDialog> {
                       ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Tag',
                         border: OutlineInputBorder(),
+                        errorText:
+                            _selectedTagError, // Display the tag error message
                       ),
                       value: _selectedTag,
                       items: widget.tags.map((tag) {
@@ -774,7 +779,15 @@ class _TaskDialogState extends State<TaskDialog> {
                       onChanged: (value) {
                         setState(() {
                           _selectedTag = value;
+                          _selectedTagError =
+                              null; // Clear any previous tag error
                         });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a tag';
+                        }
+                        return null;
                       },
                     ),
                     const SizedBox(height: 20),
@@ -788,7 +801,6 @@ class _TaskDialogState extends State<TaskDialog> {
                         );
 
                         if (selectedDate != null) {
-                          // ignore: use_build_context_synchronously
                           final selectedTime = await showTimePicker(
                             context: context,
                             initialTime: TimeOfDay.fromDateTime(
@@ -842,14 +854,20 @@ class _TaskDialogState extends State<TaskDialog> {
         TextButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
-              final newTask = TodoItem(
-                title: _textEditingController.text,
-                isCompleted: false,
-                imagePath: _image?.path,
-                tag: _selectedTag,
-                dateTime: _selectedDateTime, // Assign DateTime
-              );
-              Navigator.of(context).pop(newTask);
+              if (_selectedTag == null) {
+                setState(() {
+                  _selectedTagError = 'Please select a tag';
+                });
+              } else {
+                final newTask = TodoItem(
+                  title: _textEditingController.text,
+                  isCompleted: false,
+                  imagePath: _image?.path,
+                  tag: _selectedTag,
+                  dateTime: _selectedDateTime,
+                );
+                Navigator.of(context).pop(newTask);
+              }
             }
           },
           child: Text(
