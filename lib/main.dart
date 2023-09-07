@@ -763,8 +763,11 @@ class _TaskDialogState extends State<TaskDialog> {
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
+                        errorStyle: const TextStyle(color: Colors.yellow),
+                        errorBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.yellow)),
                         labelText: 'Tag',
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         errorText:
                             _selectedTagError, // Display the tag error message
                       ),
