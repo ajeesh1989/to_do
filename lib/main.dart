@@ -6,12 +6,16 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:to_do/box.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   Hive.registerAdapter(TodoItemAdapter());
-  await Hive.openBox<TodoItem>('tasks');
+  await Hive.deleteBoxFromDisk('tasks'); // Delete the 'tasks' box
+  await Hive.openBox<TodoItem>('tasks'); // Reopen the 'tasks' box
+
+  // await Hive.openBox<TodoItem>('tasks');
   runApp(const TodoApp());
 }
 
@@ -23,9 +27,12 @@ class TodoApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'To-Do List App',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(
+        fontFamily:
+            'Poppins', // Replace 'YourFontFamily' with your desired font family
+        // Other theme properties can be configured here
+      ),
       home: const TodoList(),
-      darkTheme: ThemeData.dark(),
     );
   }
 }
@@ -107,6 +114,7 @@ class _TodoListState extends State<TodoList> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colors.grey[300],
           title: const Text('Reset App'),
           content: const SingleChildScrollView(
             child: ListBody(
@@ -119,7 +127,7 @@ class _TodoListState extends State<TodoList> {
             TextButton(
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.black),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -128,7 +136,7 @@ class _TodoListState extends State<TodoList> {
             TextButton(
               child: const Text(
                 'Reset',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.black),
               ),
               onPressed: () {
                 _resetApp();
@@ -160,107 +168,118 @@ class _TodoListState extends State<TodoList> {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: Colors.blueGrey.shade900,
-        appBar: AppBar(
-          title: const Text('To-Do List'),
-          bottom: const TabBar(
-            labelStyle: TextStyle(
-              fontSize: 17.0,
-            ),
-            tabs: [
-              Tab(
-                child: Text(
-                  'Tasks',
+          backgroundColor: Colors.grey[300],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(125.0),
+            child: AppBar(
+              elevation: 0,
+              backgroundColor: Colors.grey[300],
+              title: const Text(
+                'To-Do List',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w200,
+                    fontSize: 25),
+              ),
+              bottom: const TabBar(
+                indicatorColor: Colors.grey,
+                labelStyle: TextStyle(
+                  fontSize: 17.0,
                 ),
-              ),
-              Tab(
-                child: Text(
-                  'Completed',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(
-                Icons
-                    .arrow_drop_down_circle_outlined, // Change to your preferred icon
-                color: Colors.white, // Change the color if needed
-              ),
-              onSelected: (tag) {
-                setState(() {
-                  _selectedTag = tag;
-                });
-              },
-              itemBuilder: (BuildContext context) {
-                final items = [
-                  'All',
-                  'Personal',
-                  'Home',
-                  'Business',
-                  'Shopping',
-                  'Work',
-                  'Other'
-                ];
-
-                // Create a map to count the tags
-                final tagCountMap = <String, int>{};
-                for (final task in _taskBox.values) {
-                  final tag = task.tag ??
-                      'No Tags'; // Use 'No Tags' for tasks with no tags
-                  tagCountMap[tag] = (tagCountMap[tag] ?? 0) + 1;
-                }
-
-                // Calculate the total count for all tags
-                final totalCount =
-                    tagCountMap.values.fold(0, (sum, count) => sum + count);
-
-                return items
-                    .where((tag) =>
-                        tag == 'All' ||
-                        tagCountMap[tag] != null &&
-                            tagCountMap[tag]! >
-                                0) // Filter tags that are selected or have counts
-                    .map<PopupMenuEntry<String>>((String tag) {
-                  final count = tag == 'All'
-                      ? totalCount
-                      : (tagCountMap[tag] ??
-                          0); // Display total count for "All" tag
-                  return PopupMenuItem<String>(
-                    value: tag,
+                tabs: [
+                  Tab(
                     child: Text(
-                        '$tag (${count.toString()})'), // Display count in brackets
-                  );
-                }).toList();
-              },
-            ),
-            IconButton(
-              onPressed: () => _showResetConfirmationDialog(context),
-              icon: const Icon(Icons.refresh),
-            ),
-          ],
-          backgroundColor: Colors.grey.shade900,
-        ),
-        body: TabBarView(
-          children: [
-            _buildTasksListView(),
-            _buildCompletedTasksListView(),
-          ],
-        ),
-        floatingActionButton: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black38.withOpacity(0.3),
-                spreadRadius: 8,
-                blurRadius: 15,
-                offset: const Offset(0, 3),
+                      'Tasks',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    child: Text(
+                      'Completed',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+              actions: [
+                NeuBox(
+                  child: PopupMenuButton<String>(
+                    color: Colors.grey[300],
+                    icon: const Icon(
+                      Icons.arrow_drop_down, // Change to your preferred icon
+                      color: Colors.black, // Change the color if needed
+                    ),
+                    onSelected: (tag) {
+                      setState(() {
+                        _selectedTag = tag;
+                      });
+                    },
+                    itemBuilder: (BuildContext context) {
+                      final items = [
+                        'All',
+                        'Personal',
+                        'Home',
+                        'Business',
+                        'Shopping',
+                        'Work',
+                        'Other'
+                      ];
+
+                      // Create a map to count the tags
+                      final tagCountMap = <String, int>{};
+                      for (final task in _taskBox.values) {
+                        final tag = task.tag ??
+                            'No Tags'; // Use 'No Tags' for tasks with no tags
+                        tagCountMap[tag] = (tagCountMap[tag] ?? 0) + 1;
+                      }
+
+                      // Calculate the total count for all tags
+                      final totalCount = tagCountMap.values
+                          .fold(0, (sum, count) => sum + count);
+
+                      return items
+                          .where((tag) =>
+                              tag == 'All' ||
+                              tagCountMap[tag] != null &&
+                                  tagCountMap[tag]! >
+                                      0) // Filter tags that are selected or have counts
+                          .map<PopupMenuEntry<String>>((String tag) {
+                        final count = tag == 'All'
+                            ? totalCount
+                            : (tagCountMap[tag] ??
+                                0); // Display total count for "All" tag
+                        return PopupMenuItem<String>(
+                          value: tag,
+                          child: Text(
+                              '$tag (${count.toString()})'), // Display count in brackets
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+                NeuBox(
+                  child: IconButton(
+                    onPressed: () => _showResetConfirmationDialog(context),
+                    icon: const Icon(Icons.refresh, color: Colors.black),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            children: [
+              _buildTasksListView(),
+              _buildCompletedTasksListView(),
             ],
           ),
-          child: FloatingActionButton(
-            backgroundColor: Colors.blueGrey.shade700,
+          floatingActionButton: FloatingActionButton(
+            backgroundColor: Colors.transparent,
             elevation: 0,
             onPressed: () async {
               final newTask = await showDialog<TodoItem>(
@@ -281,10 +300,11 @@ class _TodoListState extends State<TodoList> {
                 _taskBox.add(newTask);
               }
             },
-            child: const Icon(Icons.add, color: Colors.white),
-          ),
-        ),
-      ),
+            child: Transform.scale(
+              scale: 1.15, // Adjust the scale factor as needed
+              child: const NeuBox(child: Icon(Icons.add, color: Colors.black)),
+            ),
+          )),
     );
   }
 
@@ -302,8 +322,17 @@ class _TodoListState extends State<TodoList> {
                 .toList();
 
         return tasks.isEmpty
-            ? const Center(child: Text('No tasks'))
-            : ListView.builder(
+            ? const Center(
+                child: Text(
+                'No tasks here',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ))
+            : ListView.separated(
+                separatorBuilder: (context, index) {
+                  return const Divider(
+                    color: Colors.grey,
+                  );
+                },
                 itemCount: tasks.length,
                 itemBuilder: (context, index) {
                   final task = tasks[index];
@@ -313,7 +342,7 @@ class _TodoListState extends State<TodoList> {
                       children: [
                         SlidableAction(
                           icon: Icons.edit,
-                          backgroundColor: Colors.green.shade200,
+                          backgroundColor: Colors.grey.shade400,
                           onPressed: (context) async {
                             final updatedTask = await showDialog<TodoItem>(
                               context: context,
@@ -342,7 +371,7 @@ class _TodoListState extends State<TodoList> {
                         ),
                         SlidableAction(
                           icon: Icons.delete,
-                          backgroundColor: Colors.red.shade200,
+                          backgroundColor: Colors.grey.shade900,
                           onPressed: (context) {
                             _taskBox.delete(task.key);
                           },
@@ -379,6 +408,8 @@ class _TodoListState extends State<TodoList> {
                           });
                           task.save();
                         },
+                        activeColor:
+                            Colors.black, // Set the tick color to black
                       ),
                       trailing: GestureDetector(
                         onTap: () {
@@ -456,8 +487,17 @@ class _TodoListState extends State<TodoList> {
                 .toList();
 
         return completedTasks.isEmpty
-            ? const Center(child: Text('No completed tasks'))
-            : ListView.builder(
+            ? const Center(
+                child: Text(
+                'No completed tasks',
+                style: TextStyle(fontSize: 16, color: Colors.grey),
+              ))
+            : ListView.separated(
+                separatorBuilder: (context, index) {
+                  return const Divider(
+                    color: Colors.grey,
+                  );
+                },
                 itemCount: completedTasks.length,
                 itemBuilder: (context, index) {
                   final task = completedTasks[index];
@@ -467,7 +507,7 @@ class _TodoListState extends State<TodoList> {
                       children: [
                         SlidableAction(
                           icon: Icons.edit,
-                          backgroundColor: Colors.green.shade200,
+                          backgroundColor: Colors.grey.shade400,
                           onPressed: (context) async {
                             final updatedTask = await showDialog<TodoItem>(
                               context: context,
@@ -496,7 +536,7 @@ class _TodoListState extends State<TodoList> {
                         ),
                         SlidableAction(
                           icon: Icons.delete,
-                          backgroundColor: Colors.red.shade200,
+                          backgroundColor: Colors.grey.shade900,
                           onPressed: (context) {
                             _taskBox.delete(task.key);
                           },
@@ -677,208 +717,301 @@ class _TaskDialogState extends State<TaskDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.blueGrey.shade900,
-      title: Text(
-        widget.initialTask != null ? 'Edit Task' : 'Add Task',
-        style: const TextStyle(
-          color: Colors.white, // Title text color
+      elevation: 50,
+      insetPadding: const EdgeInsets.all(8.0),
+      contentPadding: const EdgeInsets.all(5), // Set content padding to zero
+      backgroundColor: Colors.grey[300],
+      title: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          widget.initialTask != null ? 'Edit Task' : 'Add Task',
+          style: const TextStyle(
+              color: Colors.black, fontWeight: FontWeight.w300, fontSize: 25),
         ),
       ),
       content: SingleChildScrollView(
+        // Wrap content with SingleChildScrollView
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.teal,
-                    width: 2.0,
-                  ),
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _textEditingController,
-                      decoration: const InputDecoration(
-                        errorStyle: TextStyle(color: Colors.yellow),
-                        errorBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.yellow)),
-                        labelText: 'Task Name',
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white),
-                        ),
-                        labelStyle: TextStyle(color: Colors.white),
-                      ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Task name cannot be empty';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
                       children: [
-                        ElevatedButton(
-                          onPressed: _getImageFromGallery,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
+                        NeuBox(
+                          child: TextFormField(
+                            controller: _textEditingController,
+                            decoration: InputDecoration(
+                              errorStyle: const TextStyle(color: Colors.red),
+                              errorBorder: const OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.red)),
+                              labelText: 'Task Name',
+                              focusedBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide:
+                                    BorderSide(color: Colors.grey.shade300),
+                              ),
+                              labelStyle: const TextStyle(color: Colors.black),
+                            ),
+                            style: const TextStyle(color: Colors.black),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Task name cannot be empty';
+                              }
+                              return null;
+                            },
                           ),
-                          child: const Row(
+                        ),
+                        const SizedBox(height: 20),
+                        NeuBox(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              Icon(Icons.photo_library),
+                              TextButton(
+                                onPressed: _getImageFromGallery,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[300],
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.photo_library,
+                                        color: Colors.black87),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(
+                                width: 5,
+                              ),
+                              TextButton(
+                                onPressed: _getImageFromCamera,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey[300],
+                                ),
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.camera_alt,
+                                        color: Colors.black87),
+                                  ],
+                                ),
+                              ),
                             ],
+                          ),
+                        ),
+                        if (_image != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: Image.file(_image!, width: 150, height: 150),
+                          ),
+                        const SizedBox(height: 20),
+                        NeuBox(
+                          child: DropdownButtonFormField<String>(
+                            borderRadius: BorderRadius.circular(20),
+                            dropdownColor: Colors.grey[300],
+                            decoration: InputDecoration(
+                              errorStyle: const TextStyle(color: Colors.red),
+                              errorBorder: const OutlineInputBorder(
+                                borderSide: BorderSide(color: Colors.red),
+                              ),
+                              labelText: 'Tag',
+                              labelStyle: const TextStyle(color: Colors.black),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Colors.grey
+                                        .shade300), // Set the border color here
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Colors.grey
+                                        .shade300), // Set the border color here
+                              ),
+                              errorText:
+                                  _selectedTagError, // Display the tag error message
+                            ),
+                            value: _selectedTag,
+                            items: widget.tags.map((tag) {
+                              return DropdownMenuItem<String>(
+                                value: tag,
+                                child: Text(
+                                  tag,
+                                  style: const TextStyle(color: Colors.black),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedTag = value;
+                                _selectedTagError =
+                                    null; // Clear any previous tag error
+                              });
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Please select a tag';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () async {
+                            final selectedDate = await showDatePicker(
+                              context: context,
+                              initialDate: _selectedDateTime ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2101),
+                            );
+
+                            if (selectedDate != null) {
+                              // ignore: use_build_context_synchronously
+                              final selectedTime = await showTimePicker(
+                                context: context,
+                                initialTime: TimeOfDay.fromDateTime(
+                                  _selectedDateTime ?? DateTime.now(),
+                                ),
+                              );
+
+                              if (selectedTime != null) {
+                                setState(() {
+                                  _selectedDateTime = DateTime(
+                                    selectedDate.year,
+                                    selectedDate.month,
+                                    selectedDate.day,
+                                    selectedTime.hour,
+                                    selectedTime.minute,
+                                  );
+                                });
+                              }
+                            }
+                          },
+                          child: const NeuBox(
+                            child: SizedBox(
+                              height: 50,
+                              width: 150,
+                              child: Center(
+                                child: Text(
+                                  'Pick Date & Time',
+                                  style: TextStyle(color: Colors.black),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Column(
+                          children: [
+                            _selectedDateTime != null
+                                ? const Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Text(
+                                      'Selected time',
+                                      style: TextStyle(
+                                          color: Colors.black, fontSize: 14),
+                                    ),
+                                  )
+                                : const Text(''),
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            Text(
+                              _selectedDateTime != null
+                                  ? DateFormat.yMd()
+                                      .add_jm()
+                                      .format(_selectedDateTime!)
+                                  : '',
+                              style: TextStyle(
+                                  color: Colors.grey.shade500, fontSize: 20),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
+                            child: NeuBox(
+                              child: Container(
+                                height: 50,
+                                color: Colors.grey[300],
+                                child: const Center(
+                                  child: Text(
+                                    'Cancel',
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(
-                          width: 5,
+                          width: 10,
                         ),
-                        ElevatedButton(
-                          onPressed: _getImageFromCamera,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.teal,
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.camera_alt),
-                            ],
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_formKey.currentState!.validate()) {
+                                if (_selectedTag == null) {
+                                  setState(() {
+                                    _selectedTagError = 'Please select a tag';
+                                  });
+                                } else {
+                                  final newTask = TodoItem(
+                                    title: _textEditingController.text,
+                                    isCompleted: false,
+                                    imagePath: _image?.path,
+                                    tag: _selectedTag,
+                                    dateTime: _selectedDateTime,
+                                  );
+                                  Navigator.of(context).pop(newTask);
+                                }
+                              }
+                            },
+                            child: NeuBox(
+                              child: Container(
+                                height: 50,
+                                color: Colors.grey[300],
+                                child: Center(
+                                  child: Text(
+                                    widget.initialTask != null
+                                        ? 'Update'
+                                        : 'Add',
+                                    style: const TextStyle(color: Colors.black),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    if (_image != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: Image.file(_image!, width: 150, height: 150),
-                      ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      decoration: InputDecoration(
-                        errorStyle: const TextStyle(color: Colors.yellow),
-                        errorBorder: const OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.yellow)),
-                        labelText: 'Tag',
-                        border: const OutlineInputBorder(),
-                        errorText:
-                            _selectedTagError, // Display the tag error message
-                      ),
-                      value: _selectedTag,
-                      items: widget.tags.map((tag) {
-                        return DropdownMenuItem<String>(
-                          value: tag,
-                          child: Text(tag,
-                              style: const TextStyle(color: Colors.white)),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedTag = value;
-                          _selectedTagError =
-                              null; // Clear any previous tag error
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Please select a tag';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final selectedDate = await showDatePicker(
-                          context: context,
-                          initialDate: _selectedDateTime ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2101),
-                        );
-
-                        if (selectedDate != null) {
-                          final selectedTime = await showTimePicker(
-                            context: context,
-                            initialTime: TimeOfDay.fromDateTime(
-                              _selectedDateTime ?? DateTime.now(),
-                            ),
-                          );
-
-                          if (selectedTime != null) {
-                            setState(() {
-                              _selectedDateTime = DateTime(
-                                selectedDate.year,
-                                selectedDate.month,
-                                selectedDate.day,
-                                selectedTime.hour,
-                                selectedTime.minute,
-                              );
-                            });
-                          }
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.teal, // Set the background color to teal
-                      ),
-                      child: const Text(
-                        'Pick Date & Time',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    Text(
-                      _selectedDateTime != null
-                          ? DateFormat.yMd().add_jm().format(_selectedDateTime!)
-                          : '',
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  )
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              if (_selectedTag == null) {
-                setState(() {
-                  _selectedTagError = 'Please select a tag';
-                });
-              } else {
-                final newTask = TodoItem(
-                  title: _textEditingController.text,
-                  isCompleted: false,
-                  imagePath: _image?.path,
-                  tag: _selectedTag,
-                  dateTime: _selectedDateTime,
-                );
-                Navigator.of(context).pop(newTask);
-              }
-            }
-          },
-          child: Text(
-            widget.initialTask != null ? 'Update' : 'Add',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -982,7 +1115,10 @@ class FullScreenImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.grey[900],
         title: const Text('Image'),
       ),
       body: Center(
