@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -225,9 +226,19 @@ class _TodoListState extends State<TodoList> {
                         'All',
                         'Personal',
                         'Home',
+                        'Work',
+                        'Health',
+                        'Finance',
+                        'Travel',
+                        'Education',
+                        'Social',
+                        'Grocery',
+                        'Projects',
+                        'Urgent',
+                        'Routine',
+                        'Fitness',
                         'Business',
                         'Shopping',
-                        'Work',
                         'Other'
                       ];
 
@@ -288,9 +299,19 @@ class _TodoListState extends State<TodoList> {
                   tags: [
                     'Personal',
                     'Home',
+                    'Health',
+                    'Work',
+                    'Finance',
+                    'Travel',
+                    'Education',
+                    'Social',
+                    'Grocery',
+                    'Projects',
+                    'Urgent',
+                    'Routine',
+                    'Fitness',
                     'Business',
                     'Shopping',
-                    'Work',
                     'Other',
                   ],
                 ),
@@ -351,9 +372,19 @@ class _TodoListState extends State<TodoList> {
                                 tags: const [
                                   'Personal',
                                   'Home',
+                                  'Health',
+                                  'Work',
+                                  'Finance',
+                                  'Travel',
+                                  'Education',
+                                  'Social',
+                                  'Grocery',
+                                  'Projects',
+                                  'Urgent',
+                                  'Routine',
+                                  'Fitness',
                                   'Business',
                                   'Shopping',
-                                  'Work',
                                   'Other'
                                 ],
                               ),
@@ -373,7 +404,40 @@ class _TodoListState extends State<TodoList> {
                           icon: Icons.delete,
                           backgroundColor: Colors.grey.shade900,
                           onPressed: (context) {
-                            _taskBox.delete(task.key);
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (context) => CupertinoAlertDialog(
+                                title: const Text('Delete Task'),
+                                content: const Text(
+                                    'Are you sure you want to delete this task?'),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Close the confirmation dialog
+                                    },
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade800),
+                                    ),
+                                  ),
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      _taskBox.delete(task.key);
+                                      Navigator.of(context)
+                                          .pop(); // Close the confirmation dialog
+                                    },
+                                    isDestructiveAction:
+                                        true, // Apply a destructive style (usually red text) to this action
+                                    child: const Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -449,9 +513,19 @@ class _TodoListState extends State<TodoList> {
                             tags: const [
                               'Personal',
                               'Home',
+                              'Health',
+                              'Work',
+                              'Finance',
+                              'Travel',
+                              'Education',
+                              'Social',
+                              'Grocery',
+                              'Projects',
+                              'Urgent',
+                              'Routine',
+                              'Fitness',
                               'Business',
                               'Shopping',
-                              'Work',
                               'Other',
                             ],
                           ),
@@ -516,9 +590,19 @@ class _TodoListState extends State<TodoList> {
                                 tags: const [
                                   'Personal',
                                   'Home',
+                                  'Health',
+                                  'Work',
+                                  'Finance',
+                                  'Travel',
+                                  'Education',
+                                  'Social',
+                                  'Grocery',
+                                  'Projects',
+                                  'Urgent',
+                                  'Routine',
+                                  'Fitness',
                                   'Business',
                                   'Shopping',
-                                  'Work',
                                   'Other'
                                 ],
                               ),
@@ -538,7 +622,40 @@ class _TodoListState extends State<TodoList> {
                           icon: Icons.delete,
                           backgroundColor: Colors.grey.shade900,
                           onPressed: (context) {
-                            _taskBox.delete(task.key);
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (context) => CupertinoAlertDialog(
+                                title: const Text('Delete Task'),
+                                content: const Text(
+                                    'Are you sure you want to delete this task?'),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      Navigator.of(context)
+                                          .pop(); // Close the confirmation dialog
+                                    },
+                                    child: Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                          color: Colors.grey.shade800),
+                                    ),
+                                  ),
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      _taskBox.delete(task.key);
+                                      Navigator.of(context)
+                                          .pop(); // Close the confirmation dialog
+                                    },
+                                    isDestructiveAction:
+                                        true, // Apply a destructive style (usually red text) to this action
+                                    child: const Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
                           },
                         ),
                       ],
@@ -612,9 +729,19 @@ class _TodoListState extends State<TodoList> {
                               tags: const [
                                 'Personal',
                                 'Home',
+                                'Health',
+                                'Work',
+                                'Finance',
+                                'Travel',
+                                'Education',
+                                'Social',
+                                'Grocery',
+                                'Projects',
+                                'Urgent',
+                                'Routine',
+                                'Fitness',
                                 'Business',
                                 'Shopping',
-                                'Work',
                                 'Other',
                               ],
                             ),
@@ -803,15 +930,84 @@ class _TaskDialogState extends State<TaskDialog> {
                                   ],
                                 ),
                               ),
+                              // Close button for the selected photo
                             ],
                           ),
                         ),
+
                         if (_image != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16),
-                            child: Image.file(_image!, width: 150, height: 150),
-                          ),
-                        const SizedBox(height: 20),
+                          NeuBox(
+                            child: Column(
+                              children: [
+                                _image != null
+                                    ? Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.close),
+                                            onPressed: () {
+                                              showCupertinoDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    CupertinoAlertDialog(
+                                                  title:
+                                                      const Text('Clear Photo'),
+                                                  content: const Text(
+                                                      'Are you sure you want to clear the selected photo?'),
+                                                  actions: [
+                                                    CupertinoDialogAction(
+                                                      onPressed: () {
+                                                        Navigator.of(context)
+                                                            .pop(); // Close the confirmation dialog
+                                                      },
+                                                      child: Text(
+                                                        'Cancel',
+                                                        style: TextStyle(
+                                                            color: Colors
+                                                                .grey.shade800),
+                                                      ),
+                                                    ),
+                                                    CupertinoDialogAction(
+                                                      onPressed: () {
+                                                        setState(() {
+                                                          _image =
+                                                              null; // Clear the selected photo
+                                                        });
+                                                        Navigator.of(context)
+                                                            .pop(); // Close the confirmation dialog
+                                                      },
+                                                      isDestructiveAction:
+                                                          true, // Apply a destructive style (usually red text) to this action
+                                                      child: const Text(
+                                                        'Clear',
+                                                        style: TextStyle(
+                                                            color:
+                                                                Colors.black),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink(),
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 16),
+                                  child: Image.file(_image!,
+                                      width: 150, height: 150),
+                                ),
+                                const SizedBox(
+                                  height: 20,
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          const SizedBox(height: 20),
+
                         NeuBox(
                           child: DropdownButtonFormField<String>(
                             borderRadius: BorderRadius.circular(20),
@@ -906,18 +1102,80 @@ class _TaskDialogState extends State<TaskDialog> {
                             ),
                           ),
                         ),
+                        // Close button for the selected date & time
+
                         Column(
                           children: [
-                            _selectedDateTime != null
-                                ? const Padding(
+                            const SizedBox(
+                              height: 5,
+                            ),
+                            if (_selectedDateTime != null)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Padding(
                                     padding: EdgeInsets.all(8.0),
                                     child: Text(
-                                      'Selected time',
+                                      'Selected Date & time',
                                       style: TextStyle(
-                                          color: Colors.black, fontSize: 14),
+                                          color:
+                                              Color.fromARGB(255, 98, 69, 69),
+                                          fontSize: 14),
                                     ),
-                                  )
-                                : const Text(''),
+                                  ),
+                                  if (_selectedDateTime != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.close),
+                                      onPressed: () {
+                                        showCupertinoDialog(
+                                          context: context,
+                                          builder: (context) =>
+                                              CupertinoAlertDialog(
+                                            title:
+                                                const Text('Clear Date & Time'),
+                                            content: const Text(
+                                                'Are you sure you want to clear the selected date & time?'),
+                                            actions: [
+                                              CupertinoDialogAction(
+                                                onPressed: () {
+                                                  Navigator.of(context)
+                                                      .pop(); // Close the confirmation dialog
+                                                },
+                                                child: Text(
+                                                  'Cancel',
+                                                  style: TextStyle(
+                                                      color:
+                                                          Colors.grey.shade800),
+                                                ),
+                                              ),
+                                              CupertinoDialogAction(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    _selectedDateTime =
+                                                        null; // Clear the selected date & time
+                                                  });
+                                                  Navigator.of(context)
+                                                      .pop(); // Close the confirmation dialog
+                                                },
+                                                isDestructiveAction:
+                                                    true, // Apply a destructive style (usually red text) to this action
+                                                child: const Text(
+                                                  'Clear',
+                                                  style: TextStyle(
+                                                      color: Colors.black),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  else
+                                    const SizedBox.shrink(),
+                                ],
+                              )
+                            else
+                              const Text(''),
                             const SizedBox(
                               height: 5,
                             ),
