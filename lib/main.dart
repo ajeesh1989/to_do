@@ -13,7 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   Hive.registerAdapter(TodoItemAdapter());
-  await Hive.deleteBoxFromDisk('tasks'); // Delete the 'tasks' box
+  // await Hive.deleteBoxFromDisk('tasks'); // Delete the 'tasks' box
   await Hive.openBox<TodoItem>('tasks'); // Reopen the 'tasks' box
 
   // await Hive.openBox<TodoItem>('tasks');
@@ -457,7 +457,7 @@ class _TodoListState extends State<TodoList> {
                       ),
                       subtitle: task.dateTime != null
                           ? Text(
-                              DateFormat('dd MMMM y, hh:mm a')
+                              DateFormat('MMM dd-y, hh:mm a')
                                   .format(task.dateTime!),
                               style: const TextStyle(
                                 fontSize: 14.0, // Adjust the fontSize as needed
@@ -1065,6 +1065,24 @@ class _TaskDialogState extends State<TaskDialog> {
                               initialDate: _selectedDateTime ?? DateTime.now(),
                               firstDate: DateTime(2000),
                               lastDate: DateTime(2101),
+                              builder: (context, child) {
+                                return Theme(
+                                  data: Theme.of(context).copyWith(
+                                    colorScheme: ColorScheme.light(
+                                      primary: Colors.white, // <-- SEE HERE
+                                      onPrimary: Colors.blue, // <-- SEE HERE
+                                      onSurface: Colors.black, // <-- SEE HERE
+                                    ),
+                                    textButtonTheme: TextButtonThemeData(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Colors.blue, // button text color
+                                      ),
+                                    ),
+                                  ),
+                                  child: child!,
+                                );
+                              },
                             );
 
                             if (selectedDate != null) {
@@ -1096,12 +1114,15 @@ class _TaskDialogState extends State<TaskDialog> {
                               child: Center(
                                 child: Text(
                                   'Pick Date & Time',
-                                  style: TextStyle(color: Colors.black),
+                                  style: TextStyle(
+                                      color: Colors
+                                          .black), // Change text color to black
                                 ),
                               ),
                             ),
                           ),
                         ),
+
                         // Close button for the selected date & time
 
                         Column(
@@ -1181,12 +1202,15 @@ class _TaskDialogState extends State<TaskDialog> {
                             ),
                             Text(
                               _selectedDateTime != null
-                                  ? DateFormat.yMd()
-                                      .add_jm()
-                                      .format(_selectedDateTime!)
+                                  ? DateFormat.yMMMd()
+                                          .format(_selectedDateTime!) +
+                                      ' - ' + // Add a custom gap (two spaces in this example)
+                                      DateFormat.jm().format(_selectedDateTime!)
                                   : '',
                               style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 20),
+                                color: Colors.grey.shade500,
+                                fontSize: 20,
+                              ),
                             ),
                           ],
                         ),
