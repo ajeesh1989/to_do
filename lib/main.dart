@@ -135,7 +135,7 @@ class _TodoListState extends State<TodoList> {
             CupertinoDialogAction(
               child: const Text(
                 'Reset',
-                style: TextStyle(color: CupertinoColors.systemRed),
+                style: TextStyle(color: CupertinoColors.darkBackgroundGray),
               ),
               onPressed: () {
                 _resetApp();
