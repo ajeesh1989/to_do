@@ -110,12 +110,10 @@ class _TodoListState extends State<TodoList> {
   }
 
   Future<void> _showResetConfirmationDialog(BuildContext context) async {
-    return showDialog<void>(
+    return showCupertinoDialog<void>(
       context: context,
-      barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[300],
+        return CupertinoAlertDialog(
           title: const Text('Reset App'),
           content: const SingleChildScrollView(
             child: ListBody(
@@ -125,19 +123,19 @@ class _TodoListState extends State<TodoList> {
             ),
           ),
           actions: <Widget>[
-            TextButton(
+            CupertinoDialogAction(
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: CupertinoColors.systemGrey),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
-            TextButton(
+            CupertinoDialogAction(
               child: const Text(
                 'Reset',
-                style: TextStyle(color: Colors.black),
+                style: TextStyle(color: CupertinoColors.systemRed),
               ),
               onPressed: () {
                 _resetApp();
